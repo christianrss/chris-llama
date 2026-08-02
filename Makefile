@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -O2 -std=c99
 
 # All source files
-SRC = main.c tensor.c kv_cache.c
+SRC = main.c tensor.c kv_cache.c quant.c
 
 # Object files
 OBJDIR = obj
