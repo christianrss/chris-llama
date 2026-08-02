@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h> // Critical for mmap() declaration
 
 // Global constant limits matching TinyLlama model hyperparamters
 #define MAX_DIM         4096        // Maximum hidden dimension for tensor buffers
@@ -21,5 +25,8 @@ typedef unsigned long long  u64;    // 64-bit unsigned integer for GGUF file off
 // Reserved special token IDs (placeholder for later tokenizer module)
 #define TOKEN_BOS 1 // Beginning of sequence token
 #define TOKEN_EOS 2 // End of sequence token
+
+// GGUF magic signature ASCII "GGUF"
+#define GGUF_MAGIC 0x46554747
 
 #endif

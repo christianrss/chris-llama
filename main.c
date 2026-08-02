@@ -1,6 +1,8 @@
 #include "common.h"
 #include "tensor.h"
 #include "kv_cache.h"
+#include "quant.h"
+#include "gguf.h"
 
 /**
  * Unit test for matrix multiplication core tensor math
@@ -59,11 +61,76 @@ void test_kv_cache()
     printf("Cached token count after reset: %u\n", cache.cur_seq);
 }
 
+/**
+ * Unit testfor INT4 quantization & dequantization correctness
+ * Compare original values with restored decompressed values
+ */
+void test_int4_quant()
+{
+    printf("\n[INT4 Quantization Unit Test]\n");
+    // Sample input float vector
+    f32 original[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+    const u32 elem_count = 8;
+    u8 compressed_buf[elem_count / 2]; // 2 int4 per byte
+    f32 restored[elem_count];
+    f32 scale_param, zp_param;
+
+    // Step 1: Quantize FP32 to packed INT4 bytes
+    quant_int4(original, compressed_buf, elem_count, &scale_param, &zp_param);
+    // Step 2: Decompress INT4 back to FP32
+    dequant_int4(restored, compressed_buf, elem_count, scale_param, zp_param);
+
+    // Print comparison of original vs recovered values
+    printf("Original | Restored\n");
+    for (u32 i = 0; i < elem_count; i++)
+    {
+        printf("%.2f      %.2f\n", original[i], restored[i]);
+    }
+}
+
+/**
+ * Minimal GGUF loader test: only validate header parsing
+ * Pass your tinyllama .gguf filepath as argument to run
+ */
+void test_gguf_loader(const char* model_path)
+{
+    printf("\n[GGUF mmap Loader Unit Test]\n");
+    GGUFFile gf;
+    int ret = gguf_open(model_path, &gf);
+    if (ret != 0)
+    {
+        printf("GGUF load test FAILED, invalid file path or format\n");
+        return;
+    }
+
+    printf("GGUF file loaded successfully\n");
+    printf("GGUF Version: %u\n", gf.hdr.version);
+    printf("Total tensors in model: %llu\n", (unsigned long long)gf.hdr.n_tensors);
+    printf("Total metadata entries: %llu\n", (unsigned long long)gf.hdr.n_metadata);
+
+    gguf_close(&gf);
+    printf("GGUF resource claned up\n");
+}
+
+
 int main(int argc, char** argv)
 {
-    printf("===== Section 2: Tensor System Unit Test =====\n");
+    printf("===== Section 5: Tensor + KV Cache + INT4 Quant + GGUF Loader Test  =====\n");
     test_matmul();
     test_kv_cache();
-    printf("\nAll tensor tests finished without error.\n");
+    test_int4_quant();
+
+    // If user pass gguf file path, run GGUF test
+    if (argc >= 2)
+
+    {
+        test_gguf_loader(argv[1]);
+    }
+    else
+    {
+        printf("\nHint: Run with ./chris_llama model.gguf to test GGUF loading\n");
+    }
+
+    printf("\nAll  tests finished without error.\n");
     return 0;
 }
