@@ -154,6 +154,29 @@ void test_swiglu()
     printf("\n");
 }
 
+/**
+ * Unit test for RoPE rotary positional encoding transformation
+ */
+void test_rope()
+{
+    printf("\n[RoPE Rotary Positional Encoding Test]\n");
+    // Short test vector, total dim = 8, single head dim = 8
+    f32 q[] = {1, 0, 1, 0, 1, 0, 1, 0};
+    f32 k[] = {1, 0, 1, 0, 1, 0, 1, 0};
+    u32 pos = 5;
+    u32 dim = 8;
+    u32 head_dim = 8;
+
+    // Apply RoPE transformation to Q and K vectors
+    rope(q, k, pos, dim, head_dim);
+
+    printf("Rotated Q vector: ");
+    for(int i = 0; i < 8; i++) {
+        printf("%.3f ", q[i]);
+    }
+    printf("\n");
+}
+
 
 int main(int argc, char** argv)
 {
@@ -163,6 +186,7 @@ int main(int argc, char** argv)
     test_int4_quant();
     test_rms_norm();
     test_swiglu();
+    test_rope();
 
     // If user pass gguf file path, run GGUF test
     if (argc >= 2)

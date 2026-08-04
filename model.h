@@ -55,7 +55,18 @@ void rms_norm(f32* out, const f32* x, const f32* w, u32 dim);
 void swiglu(f32* out, const f32* gate, const f32* up, u32 dim);
 
 /**
- * @brief Initialize empty LLaMA & allocateall tensor memory buffers
+ * @brief RoPE Rotary Positional Encoding
+ * Rotate Query and Key vector 2D coordinate pairs in-place
+ * @param q Query vector buffer (modified after function call)
+ * @param k Key vector buffer (modified after function call)
+ * @param pos Current token sequence position index
+ * @param dim Total hidden dimension of Q/K vector
+ * @param head_dim Dimension of single attention head (dim / n_heads)
+ */
+void rope(f32* q, f32* k, u32 pos, u32 dim, u32 head_dim);
+
+/**
+ * @brief Initialize empty LLaMA & allocate all tensor memory buffers
  * @param model Pointer to empty LLaMAModel struct
  * @param cfg model hyperparameter configuration
  * @return 0 success, -1 memory allocation failure
