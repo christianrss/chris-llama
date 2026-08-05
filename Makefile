@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -lm
 
 # All source files
-SRC = main.c tensor.c kv_cache.c quant.c gguf.c model.c
+SRC = main.c tensor.c kv_cache.c quant.c gguf.c model.c tokenizer.c generate.c
 
 # Object files
 OBJDIR = obj

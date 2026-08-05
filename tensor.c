@@ -13,8 +13,8 @@ Tensor* tensor_create(u32 ndim, u32* shape)
     // Calculate total element count and copy dimension sizes
     for (u32 i = 0; i < ndim; i ++)
     {
-        t->dims[i] = shape[1];
-        t->size *= shape[1];
+        t->dims[i] = shape[i];
+        t->size *= shape[i];
     }
 
     // Allocate continuous zeroed float memory for tensor data
