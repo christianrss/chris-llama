@@ -2,10 +2,10 @@
 CC = gcc
 
 # Compile flags: warnings, optimization, C99
-CFLAGS = -Wall -Wextra -std=c99 -lm
+CFLAGS = -Wall -O2 -std=c99 -lm
 
 # All source files
-SRC = main.c tensor.c kv_cache.c quant.c gguf.c model.c
+SRC = main.c tensor.c kv_cache.c quant.c gguf.c model.c tokenizer.c generate.c
 
 # Object files
 OBJDIR = obj

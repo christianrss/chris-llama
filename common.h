@@ -7,12 +7,16 @@
 #include <math.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h> // Critical for mmap() declaration
+#include <time.h>
+#include <ctype.h>
 
 // Global constant limits matching TinyLlama model hyperparamters
 #define MAX_DIM         4096        // Maximum hidden dimension for tensor buffers
 #define MAX_SEQ_LEN     2048        // Maximum token context window length
+#define MAX_TOKEN_LEN  256
 #define MAX_PROMPT_LEN  1024        // Max character length of user input prompt
 #define EPS             1e-8f       // Small epsilon to avoid division by zero in normalization
 

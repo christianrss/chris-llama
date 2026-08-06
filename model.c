@@ -142,6 +142,24 @@ int llama_model_init(LLaMAModel* model, LLaMAConfig* cfg)
     // LM head projects hidden state to vocabulary logits
     u32 head_shape[] = {cfg->dim, cfg->vocab_size};
     model->lm_head = tensor_create(2, head_shape);
+    
+    // Alocate every weight tensor for each decoder layer
+    u32 dim1d[] = {1, cfg->dim};
+    u32 dim2d_qkv[] = {cfg->dim, cfg->dim};
+    u32 dim_ffn[] = {cfg->dim, cfg->dim * 2};
+    for (u32 l = 0; l < cfg->n_layers; l++)
+    {
+        DecoderLayer* layer = &model->layers[l];
+        layer->attn_norm = tensor_create(2, dim1d);
+        layer->ffn_norm = tensor_create(2, dim1d);
+        layer->q_proj = tensor_create(2, dim2d_qkv);
+        layer->k_proj = tensor_create(2, dim2d_qkv);
+        layer->v_proj = tensor_create(2, dim2d_qkv);
+        layer->o_proj = tensor_create(2, dim2d_qkv);
+        layer->gate_proj = tensor_create(2, dim_ffn);
+        layer->up_proj = tensor_create(2, dim_ffn);
+        layer->down_proj = tensor_create(2, dim_ffn);
+    }
 
     return 0;
 }
@@ -152,10 +170,24 @@ int llama_model_init(LLaMAModel* model, LLaMAConfig* cfg)
 void llama_model_free(LLaMAModel* model)
 {
     if (!model) return;
+
+    for (u32 l = 0;l < model->cfg.n_layers; l++)
+    {
+        DecoderLayer* layer = &model->layers[l];
+        tensor_free(layer->attn_norm);
+        tensor_free(layer->ffn_norm);
+        tensor_free(layer->q_proj);
+        tensor_free(layer->k_proj);
+        tensor_free(layer->v_proj);
+        tensor_free(layer->o_proj);
+        tensor_free(layer->gate_proj);
+        tensor_free(layer->up_proj);
+        tensor_free(layer->down_proj);
+    }
+    free(model->layers);
+
     tensor_free(model->embeddings);
     tensor_free(model->final_norm);
     tensor_free(model->lm_head);
-    if (model->layers)
-        free(model->layers);
     memset(model, 0, sizeof(LLaMAModel));
 }
