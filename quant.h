@@ -1,27 +1,29 @@
-#ifndef QUANT_H
-#define QUANT_H
+#ifndef CHRIS_QUANT_H
+#define CHRIS_QUANT_H
 
 #include "common.h"
 
-/**
- * Convert FP32 float array into packed INT4 bytes
- * Two 4-bit integers are packed into one single u8 byte
- * @param src Input original FP32 weight array
- * @param dst Output compressed byte buffer
- * @param n Total number of float elements
- * @param scale Output quantization scaling factor
- * @param zp Output zero point offset
- */
-void quant_int4(const f32* src, u8* dst, u32 n, f32* scale, f32* zp);
+/* ggml_type IDs used by GGUF. */
+enum {
+    CHRIS_GGML_TYPE_F32  = 0,
+    CHRIS_GGML_TYPE_F16  = 1,
+    CHRIS_GGML_TYPE_Q4_0 = 2,
+    CHRIS_GGML_TYPE_Q4_1 = 3,
+    CHRIS_GGML_TYPE_Q5_0 = 6,
+    CHRIS_GGML_TYPE_Q5_1 = 7,
+    CHRIS_GGML_TYPE_Q8_0 = 8,
+    CHRIS_GGML_TYPE_Q4_K = 12,
+    CHRIS_GGML_TYPE_Q5_K = 13,
+    CHRIS_GGML_TYPE_Q6_K = 14,
+};
 
-/**
- * Unpack INT4 compressed bytes and restore back to FP32 floats for inference
- * @param dst Output decompressed FP32 array
- * @param src Input packed INT4 byte buffer
- * @param n Total number of float elements to restore
- * @param scale Precomputed scale from quantization stage
- * @param zp Precomputed zero point from quantization stage
- */
-void dequant_int4(f32* dst, const u8* src, u32 n, f32 scale, f32 zp);
+size_t quant_nbytes(uint32_t type, uint64_t element_count);
+int quant_to_f32(uint32_t type,
+                 const void *source,
+                 uint64_t element_count,
+                 float *destination);
 
-#endif
+float fp16_to_fp32(uint16_t value);
+const char *quant_type_name(uint32_t type);
+
+#endif /* CHRIS_QUANT_H */

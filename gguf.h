@@ -1,53 +1,91 @@
-#ifndef GGUF_H
-#define GGUF_H
+#ifndef CHRIS_GGUF_H
+#define CHRIS_GGUF_H
 
 #include "common.h"
-#include "tensor.h"
+#include "quant.h"
 
-/*
- * Official GGUF v3 fixed header structure
- * Stores global metadata for entire model file
- */
-typedef struct {
-    u32 magic;          // File signature, must equal GGUF_MAGIC
-    u32 version;        // GGUF format major version
-    u64 n_tensors;      // Total count of weight tensors inside file
-    u64 n_metadata;     // Total count of model hyperparameter metadata entries
-} GGUFHeader;
+#define GGUF_MAGIC 0x46554747u  /* "GGUF" in little-endian. */
 
-/**
- * Global GGUF file handle
- * Manages file descriptor, mmap mapped memory and offsets
- */
+typedef enum {
+    GGUF_VALUE_UINT8   = 0,
+    GGUF_VALUE_INT8    = 1,
+    GGUF_VALUE_UINT16  = 2,
+    GGUF_VALUE_INT16   = 3,
+    GGUF_VALUE_UINT32  = 4,
+    GGUF_VALUE_INT32   = 5,
+    GGUF_VALUE_FLOAT32 = 6,
+    GGUF_VALUE_BOOL    = 7,
+    GGUF_VALUE_STRING  = 8,
+    GGUF_VALUE_ARRAY   = 9,
+    GGUF_VALUE_UINT64  = 10,
+    GGUF_VALUE_INT64   = 11,
+    GGUF_VALUE_FLOAT64 = 12,
+} GGUFValueType;
+
 typedef struct {
-    int fd;                 // System file descriptor for opened GGUF file
-    void* data;             // Base pointer of mmap zero-copy mapped memory
-    size_t size;            // Total byte size of GGUF file
-    GGUFHeader hdr;         // Parsed GGUF header info
-    u64 tensor_offset;       // Start byte offset of all tensor weight data
+    uint32_t elem_type;
+    uint64_t count;
+    void *data;  /* char ** for string arrays; packed bytes otherwise. */
+} GGUFArray;
+
+typedef struct {
+    uint32_t type;
+    union {
+        uint64_t u64;
+        int64_t i64;
+        double f64;
+        char *str;
+        GGUFArray array;
+    } as;
+} GGUFValue;
+
+typedef struct {
+    char *key;
+    GGUFValue value;
+} GGUFMetadata;
+
+typedef struct {
+    char *name;
+    uint32_t n_dims;
+    uint64_t dims[4];  /* GGML order: dims[0] is contiguous. */
+    uint32_t type;
+    uint64_t offset;   /* Relative to the tensor data section. */
+    uint64_t n_elements;
+    size_t n_bytes;
+} GGUFTensorInfo;
+
+typedef struct {
+    int fd;
+    uint8_t *map;
+    size_t file_size;
+
+    uint32_t version;
+    uint64_t n_tensors;
+    uint64_t n_metadata;
+    GGUFMetadata *metadata;
+    GGUFTensorInfo *tensors;
+
+    uint64_t alignment;
+    uint64_t data_offset;
 } GGUFFile;
 
-/**
- * Open GGUF file, create mmap mapping and parse header
- * @param path Path to target GGUF model file
- * @param gf Empty GGUFFile handle to fill
- * @return 0 = success, -1 = any failure (file missing / bad magic / mmapfail)
- */
-int gguf_open(const char* path, GGUFFile* gf);
+int gguf_open(const char *path, GGUFFile *gguf);
+void gguf_close(GGUFFile *gguf);
 
-/**
- * Release mmap buffer and close file descriptor to avoid resource leak
- * @param gf Loaded GGUF file handle
- */
-void gguf_close(GGUFFile* gf);
+const GGUFMetadata *gguf_find_metadata(const GGUFFile *gguf,
+                                       const char *key);
+const GGUFTensorInfo *gguf_find_tensor(const GGUFFile *gguf,
+                                       const char *name);
+const void *gguf_tensor_data(const GGUFFile *gguf,
+                             const GGUFTensorInfo *tensor);
 
-/**
- * Read continuous FP32 weight block from mapped GGUF memory into tensor buffer
- * @param gf Active GGUF file handle
- * @param offset Target byte offset inside tensor data region
- * @param out Destination float array buffer
- * @param element_cnt Total f32 elements to copy
- */
-void gguf_read_f32(GGUFFile* gf, u64 offset, f32* out, u64 elem_cnt);
+int gguf_get_u64(const GGUFFile *gguf, const char *key, uint64_t *out);
+int gguf_get_f64(const GGUFFile *gguf, const char *key, double *out);
+const char *gguf_get_string(const GGUFFile *gguf, const char *key);
+const GGUFArray *gguf_get_array(const GGUFFile *gguf,
+                                const char *key,
+                                uint32_t element_type);
 
-#endif
+void gguf_print_summary(const GGUFFile *gguf, bool list_tensors);
+
+#endif /* CHRIS_GGUF_H */

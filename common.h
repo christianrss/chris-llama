@@ -1,36 +1,43 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef CHRIS_COMMON_H
+#define CHRIS_COMMON_H
 
+#include <errno.h>
+#include <inttypes.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h> // Critical for mmap() declaration
-#include <time.h>
-#include <ctype.h>
 
-// Global constant limits matching TinyLlama model hyperparamters
-#define MAX_DIM         4096        // Maximum hidden dimension for tensor buffers
-#define MAX_SEQ_LEN     2048        // Maximum token context window length
-#define MAX_TOKEN_LEN  256
-#define MAX_PROMPT_LEN  1024        // Max character length of user input prompt
-#define EPS             1e-8f       // Small epsilon to avoid division by zero in normalization
+#define CHRIS_UNUSED(x) ((void)(x))
+#define CHRIS_MIN(a,b) ((a) < (b) ? (a) : (b))
+#define CHRIS_MAX(a,b) ((a) > (b) ? (a) : (b))
 
-// Fixed-width cross-platform data types for consistent LLM computation
-typedef float               f32;    // 32-bit single-precision floating point
-typedef unsigned char       u8;     // 8-bit unsigned byte for quantized weights
-typedef unsigned int        u32;    // 32-bit unsigned integer for indexes & lengths
-typedef unsigned long long  u64;    // 64-bit unsigned integer for GGUF file offsets
+static inline void *chris_xmalloc(size_t n) {
+    void *p = malloc(n ? n : 1);
+    if (!p) {
+        fprintf(stderr, "fatal: malloc(%zu) failed\n", n);
+        exit(EXIT_FAILURE);
+    }
+    return p;
+}
 
-// Reserved special token IDs (placeholder for later tokenizer module)
-#define TOKEN_BOS 1 // Beginning of sequence token
-#define TOKEN_EOS 2 // End of sequence token
+static inline void *chris_xcalloc(size_t n, size_t s) {
+    void *p = calloc(n ? n : 1, s ? s : 1);
+    if (!p) {
+        fprintf(stderr, "fatal: calloc(%zu, %zu) failed\n", n, s);
+        exit(EXIT_FAILURE);
+    }
+    return p;
+}
 
-// GGUF magic signature ASCII "GGUF"
-#define GGUF_MAGIC 0x46554747
+static inline char *chris_xstrdup(const char *s) {
+    size_t n = strlen(s) + 1;
+    char *p = (char *)chris_xmalloc(n);
+    memcpy(p, s, n);
+    return p;
+}
 
 #endif

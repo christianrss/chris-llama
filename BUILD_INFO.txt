@@ -1,0 +1,17 @@
+Chris Llama source package
+
+Generated binaries and object files are not part of the source tree. Builds are
+written under build/ and can be reproduced with:
+
+  make BACKEND=cpu
+
+or, after installing AdaptiveCpp:
+
+  ./scripts/setup_adaptivecpp.sh
+  make BACKEND=acpp ACPP_TARGETS=generic
+
+AdaptiveCpp source used by the bootstrap:
+  https://github.com/christianrss/AdaptiveCpp
+
+Related AdaptiveCpp testbed:
+  https://github.com/christianrss/tests-acpp
