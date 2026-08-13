@@ -1,27 +1,51 @@
-#ifndef TOKENIZER_H
-#define TOKENIZER_H
+#ifndef CHRIS_TOKENIZER_H
+#define CHRIS_TOKENIZER_H
 
-#include "common.h"
+#include "gguf.h"
 
-// Simple mock tokenizer for demo, word -> token id mapping
-#define MAX_TOKEN_VOCAB 128
+#include <stdio.h>
 
-/**
- * Convert simple input text string to token ID array
- * This is a minimal placeholder tokenizer for teaching demo
- * @param text Input user prompt string
- * @param tokens Output token id buffer
- * @param max_tokens Max capacity of token buffer
- * @return Actual number of generated tokens
- */
-u32 text_to_tokens(const char* text, u32* tokens, u32 max_tokens);
+typedef struct VocabSlot VocabSlot;
+typedef struct MergeSlot MergeSlot;
 
-/**
- * Convert single token ID back to readable text string
- * @param token Target token id
- * @param out_str Output characterbuffer
- * @param str_len Max length of output string
- */
-void token_to_text(u32 token, char* out_str, u32 str_len);
+typedef struct {
+    char **tokens;       /* Strings as stored in GGUF metadata. */
+    uint64_t n_tokens;
 
-#endif
+    char **merges;
+    uint64_t n_merges;
+
+    uint32_t bos_id;
+    uint32_t eos_id;
+    bool has_bos;
+    bool has_eos;
+
+    int32_t *token_types;  /* Optional tokenizer.ggml.token_type metadata. */
+
+    VocabSlot *vocab_table;
+    size_t vocab_cap;
+    MergeSlot *merge_table;
+    size_t merge_cap;
+
+    int byte_for_cp[512];  /* Inverse GPT-2 bytes_to_unicode table. */
+} GPT2Tokenizer;
+
+int tokenizer_init_from_gguf(GPT2Tokenizer *tokenizer,
+                             const GGUFFile *gguf);
+void tokenizer_free(GPT2Tokenizer *tokenizer);
+
+/* Allocates *ids. The caller owns the returned array. */
+int tokenizer_encode(const GPT2Tokenizer *tokenizer,
+                     const char *text,
+                     uint32_t **ids,
+                     size_t *count);
+
+size_t tokenizer_decode_token(const GPT2Tokenizer *tokenizer,
+                              uint32_t id,
+                              uint8_t *out,
+                              size_t capacity);
+void tokenizer_print_token(const GPT2Tokenizer *tokenizer,
+                           uint32_t id,
+                           FILE *stream);
+
+#endif /* CHRIS_TOKENIZER_H */
